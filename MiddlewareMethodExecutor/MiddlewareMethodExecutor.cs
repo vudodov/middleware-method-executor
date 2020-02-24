@@ -11,11 +11,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MiddlewareMethodExecutor
 {
-    public static class MiddlewareMethodExecutor
+    public static class Executor
     {
-        internal static async Task<object> ExecuteAsyncMethod(Type messageType, Type messageHandlerType, string methodName,
-            PipeReader pipeReader, JsonSerializerOptions jsonSerializerOptions,
-            IServiceProvider serviceProvider, CancellationToken cancellationToken, params object[] parameters)
+        public static async Task<object> ExecuteAsyncMethod(Type messageType, Type messageHandlerType, string methodName,
+            PipeReader pipeReader, IServiceProvider serviceProvider, JsonSerializerOptions jsonSerializerOptions, 
+            CancellationToken cancellationToken, params object[] parameters)
         {
             object messageHandlerInstance = ActivatorUtilities.CreateInstance(serviceProvider, messageHandlerType);
             MethodInfo? handleAsyncMethod = messageHandlerType.GetMethod(methodName);
