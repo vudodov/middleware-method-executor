@@ -22,8 +22,7 @@ namespace MiddlewareMethodExecutor
 
             if (handleAsyncMethod == null) throw new MissingMethodException(nameof(messageHandlerType), "HandleAsync");
 
-            var message = await ReadMessageAsync(pipeReader, messageType, jsonSerializerOptions, cancellationToken);
-            if (message == null) throw new NullReferenceException("Message should not be null");
+            object? message = await ReadMessageAsync(pipeReader, messageType, jsonSerializerOptions, cancellationToken);
             
             var invokeParameters = new object[parameters.Length + 2];
             invokeParameters[0] = message;
