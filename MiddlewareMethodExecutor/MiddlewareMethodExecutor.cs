@@ -13,8 +13,9 @@ namespace MiddlewareMethodExecutor
 {
     public static class Executor
     {
-        public static async Task<object> ExecuteAsyncMethod(Type messageType, Type messageHandlerType, string methodName,
-            PipeReader pipeReader, IServiceProvider serviceProvider, JsonSerializerOptions jsonSerializerOptions, 
+        public static async Task<(object? message, object result)> ExecuteAsyncMethod(Type messageType,
+            Type messageHandlerType, string methodName,
+            PipeReader pipeReader, IServiceProvider serviceProvider, JsonSerializerOptions jsonSerializerOptions,
             CancellationToken cancellationToken, params object[] parameters)
         {
             object messageHandlerInstance = ActivatorUtilities.CreateInstance(serviceProvider, messageHandlerType);
@@ -23,17 +24,17 @@ namespace MiddlewareMethodExecutor
             if (handleAsyncMethod == null) throw new MissingMethodException(nameof(messageHandlerType), "HandleAsync");
 
             object? message = await ReadMessageAsync(pipeReader, messageType, jsonSerializerOptions, cancellationToken);
-            
+
             var invokeParameters = new object[parameters.Length + 2];
             invokeParameters[0] = message;
             invokeParameters[^1] = cancellationToken;
             for (var i = 0; i < parameters.Length; i++) invokeParameters[i + 1] = parameters[i];
-            
-            var messageHandlingResult = handleAsyncMethod.Invoke(messageHandlerInstance, invokeParameters);
 
-            if (messageHandlingResult == null) throw new NullReferenceException("Message result cannot be null.");
+            var result = await (Task<object>) handleAsyncMethod.Invoke(messageHandlerInstance, invokeParameters);
 
-            return await (Task<object>) messageHandlingResult;
+            if (result == null) throw new NullReferenceException("Message execution result cannot be null.");
+
+            return (message, result);
         }
 
         private static async Task<object?> ReadMessageAsync(PipeReader pipeReader, Type messageType,
