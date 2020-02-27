@@ -13,7 +13,7 @@ namespace MiddlewareMethodExecutor
 {
     public static class Executor
     {
-        public static async Task<(object? message, object result)> ExecuteAsyncMethod(Type messageType,
+        public static async Task<(object? message, Func<Task<object>> handleQuery)> ExecuteAsyncMethod(Type messageType,
             Type messageHandlerType, string methodName,
             PipeReader pipeReader, IServiceProvider serviceProvider, JsonSerializerOptions jsonSerializerOptions,
             CancellationToken cancellationToken, params object[] parameters)
@@ -30,11 +30,13 @@ namespace MiddlewareMethodExecutor
             invokeParameters[^1] = cancellationToken;
             for (var i = 0; i < parameters.Length; i++) invokeParameters[i + 1] = parameters[i];
 
-            var result = await (Task<object>) handleAsyncMethod.Invoke(messageHandlerInstance, invokeParameters);
+            async Task<object> HandleQuery() =>
+                await (Task<object>) handleAsyncMethod.Invoke(messageHandlerInstance, invokeParameters);
 
-            if (result == null) throw new NullReferenceException("Message execution result cannot be null.");
+            if ((Func<Task<object>>) HandleQuery == null)
+                throw new NullReferenceException("Message execution result cannot be null.");
 
-            return (message, result);
+            return (message, HandleQuery);
         }
 
         private static async Task<object?> ReadMessageAsync(PipeReader pipeReader, Type messageType,
